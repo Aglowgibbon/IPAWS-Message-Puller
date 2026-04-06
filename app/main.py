@@ -144,7 +144,13 @@ def _collect_prompted_values() -> Tuple[str, str, List[str], datetime, datetime]
 def _resolve_query_inputs(args: argparse.Namespace) -> Tuple[str, str, List[str], Optional[datetime], Optional[datetime]]:
     cli_cog_ids = resolve_cog_ids(args)
 
-    has_cli_filters = bool(args.start or args.end or cli_cog_ids)
+    has_cli_filters = bool(
+        args.start
+        or args.end
+        or cli_cog_ids
+        or args.event_code
+        or args.geocode
+    )
     if not has_cli_filters:
         return _collect_prompted_values()
 
