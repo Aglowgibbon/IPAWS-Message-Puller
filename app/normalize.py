@@ -137,13 +137,53 @@ def _extract_original_wea_messages(alert: Dict[str, Any]) -> Dict[str, str]:
                     params[value_name] = value
 
         if language.startswith("en"):
-            parsed["originalMessage90English"] = params.get("CMAMtext", "")
-            parsed["originalMessage360English"] = params.get("CMAMlongtext", "")
+            cmam_text = params.get("CMAMtext", "")
+            cmam_long_text = params.get("CMAMlongtext", "")
+            if cmam_text:
+                parsed["originalMessage90English"] = cmam_text
+            if cmam_long_text:
+                parsed["originalMessage360English"] = cmam_long_text
         elif language.startswith("es"):
-            parsed["originalMessage90Spanish"] = params.get("CMAMtext", "")
-            parsed["originalMessage360Spanish"] = params.get("CMAMlongtext", "")
+            cmam_text = params.get("CMAMtext", "")
+            cmam_long_text = params.get("CMAMlongtext", "")
+            if cmam_text:
+                parsed["originalMessage90Spanish"] = cmam_text
+            if cmam_long_text:
+                parsed["originalMessage360Spanish"] = cmam_long_text
 
     return parsed
+
+
+def _extract_delivery_systems(alert: Dict[str, Any]) -> List[str]:
+    systems = set()
+    for info in alert.get("info", []) or []:
+        parameters = info.get("parameter", []) or []
+        for parameter in parameters:
+            if not isinstance(parameter, dict):
+                continue
+
+            name = str(parameter.get("name") or parameter.get("valueName") or "").strip()
+            value = str(parameter.get("value") or "").strip()
+
+            if name == "EAS-ORG":
+                systems.add("EAS")
+            if name == "WEAHandling" or name in {"CMAMtext", "CMAMlongtext"}:
+                systems.add("WEA")
+            if name == "BLOCKCHANNEL":
+                if value.upper() == "NWEM":
+                    systems.add("NWEM")
+                if value.upper() == "CMAS":
+                    systems.add("WEA")
+
+        resources = info.get("resource", []) or []
+        for resource in resources:
+            if not isinstance(resource, dict):
+                continue
+            resource_desc = str(resource.get("resourceDesc") or "")
+            if "EAS Broadcast Content" in resource_desc:
+                systems.add("EAS")
+
+    return sorted(systems)
 
 
 def flatten_alert(alert: Dict[str, Any]) -> Dict[str, Any]:
@@ -167,6 +207,7 @@ def flatten_alert(alert: Dict[str, Any]) -> Dict[str, Any]:
         "info.category": "|".join(info_categories),
         "info.event": "|".join(info_events),
         "info.expires": "|".join(info_expires),
+        "deliverySystems": "|".join(_extract_delivery_systems(alert)),
         "eventCodes": "|".join(_extract_event_codes(alert)),
         "events": "|".join(_extract_events(alert)),
         "headlines": "|".join(_extract_headlines(alert)),
