@@ -4,6 +4,7 @@ import csv
 import json
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
+from xml.etree import ElementTree
 
 
 def _extract_event_codes(alert: Dict[str, Any]) -> List[str]:
@@ -77,7 +78,113 @@ def _extract_geocodes(alert: Dict[str, Any]) -> List[str]:
     return sorted(set(values))
 
 
+def _extract_info_values(alert: Dict[str, Any], field_name: str) -> List[str]:
+    values: List[str] = []
+    for info in (alert.get("info", []) or []):
+        raw_value = info.get(field_name)
+        if not raw_value:
+            continue
+        if isinstance(raw_value, list):
+            for item in raw_value:
+                if item:
+                    values.append(str(item))
+        else:
+            values.append(str(raw_value))
+    return sorted(set(values))
+
+
+def _local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _extract_original_wea_messages(alert: Dict[str, Any]) -> Dict[str, str]:
+    parsed = {
+        "originalMessage90English": "",
+        "originalMessage360English": "",
+        "originalMessage90Spanish": "",
+        "originalMessage360Spanish": "",
+    }
+    original_message = alert.get("originalMessage")
+    if not original_message or not isinstance(original_message, str):
+        return parsed
+
+    try:
+        root = ElementTree.fromstring(original_message)
+    except ElementTree.ParseError:
+        return parsed
+
+    for info_node in root:
+        if _local_name(info_node.tag) != "info":
+            continue
+
+        language = ""
+        params: Dict[str, str] = {}
+
+        for node in info_node:
+            node_name = _local_name(node.tag)
+            if node_name == "language":
+                language = (node.text or "").strip().lower()
+            elif node_name == "parameter":
+                value_name = ""
+                value = ""
+                for param_node in node:
+                    param_name = _local_name(param_node.tag)
+                    if param_name == "valueName":
+                        value_name = (param_node.text or "").strip()
+                    elif param_name == "value":
+                        value = (param_node.text or "").strip()
+                if value_name and value:
+                    params[value_name] = value
+
+        if language.startswith("en"):
+            parsed["originalMessage90English"] = params.get("CMAMtext", "")
+            parsed["originalMessage360English"] = params.get("CMAMlongtext", "")
+        elif language.startswith("es"):
+            parsed["originalMessage90Spanish"] = params.get("CMAMtext", "")
+            parsed["originalMessage360Spanish"] = params.get("CMAMlongtext", "")
+
+    return parsed
+
+
+def _extract_delivery_systems(alert: Dict[str, Any]) -> List[str]:
+    systems = set()
+    for info in alert.get("info", []) or []:
+        parameters = info.get("parameter", []) or []
+        for parameter in parameters:
+            if not isinstance(parameter, dict):
+                continue
+
+            name = str(parameter.get("name") or parameter.get("valueName") or "").strip()
+            value = str(parameter.get("value") or "").strip()
+
+            if name == "EAS-ORG":
+                systems.add("EAS")
+            if name == "WEAHandling" or name in {"CMAMtext", "CMAMlongtext"}:
+                systems.add("WEA")
+            if name == "BLOCKCHANNEL":
+                if value.upper() == "NWEM":
+                    systems.add("NWEM")
+                if value.upper() == "CMAS":
+                    systems.add("WEA")
+
+        resources = info.get("resource", []) or []
+        for resource in resources:
+            if not isinstance(resource, dict):
+                continue
+            resource_desc = str(resource.get("resourceDesc") or "")
+            if "EAS Broadcast Content" in resource_desc:
+                systems.add("EAS")
+
+    return sorted(systems)
+
+
 def flatten_alert(alert: Dict[str, Any]) -> Dict[str, Any]:
+    info_languages = _extract_info_values(alert, "language")
+    info_categories = _extract_info_values(alert, "category")
+    info_events = _extract_info_values(alert, "event")
+    info_expires = _extract_info_values(alert, "expires")
+    original_wea_messages = _extract_original_wea_messages(alert)
+
     return {
         "id": alert.get("id"),
         "identifier": alert.get("identifier"),
@@ -87,12 +194,19 @@ def flatten_alert(alert: Dict[str, Any]) -> Dict[str, Any]:
         "scope": alert.get("scope"),
         "sender": alert.get("sender"),
         "cogId": alert.get("cogId"),
+        "source": alert.get("source"),
+        "info.language": "|".join(info_languages),
+        "info.category": "|".join(info_categories),
+        "info.event": "|".join(info_events),
+        "info.expires": "|".join(info_expires),
+        "deliverySystems": "|".join(_extract_delivery_systems(alert)),
         "eventCodes": "|".join(_extract_event_codes(alert)),
         "events": "|".join(_extract_events(alert)),
         "headlines": "|".join(_extract_headlines(alert)),
         "senderNames": "|".join(_extract_sender_names(alert)),
         "areaDescs": "|".join(_extract_area_desc(alert)),
         "geocodes": "|".join(_extract_geocodes(alert)),
+        **original_wea_messages,
     }
 
 
