@@ -137,11 +137,19 @@ def _extract_original_wea_messages(alert: Dict[str, Any]) -> Dict[str, str]:
                     params[value_name] = value
 
         if language.startswith("en"):
-            parsed["originalMessage90English"] = params.get("CMAMtext", "")
-            parsed["originalMessage360English"] = params.get("CMAMlongtext", "")
+            cmam_text = params.get("CMAMtext", "")
+            cmam_long_text = params.get("CMAMlongtext", "")
+            if cmam_text:
+                parsed["originalMessage90English"] = cmam_text
+            if cmam_long_text:
+                parsed["originalMessage360English"] = cmam_long_text
         elif language.startswith("es"):
-            parsed["originalMessage90Spanish"] = params.get("CMAMtext", "")
-            parsed["originalMessage360Spanish"] = params.get("CMAMlongtext", "")
+            cmam_text = params.get("CMAMtext", "")
+            cmam_long_text = params.get("CMAMlongtext", "")
+            if cmam_text:
+                parsed["originalMessage90Spanish"] = cmam_text
+            if cmam_long_text:
+                parsed["originalMessage360Spanish"] = cmam_long_text
 
     return parsed
 
