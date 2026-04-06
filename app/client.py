@@ -85,7 +85,29 @@ class FEMAIpawsClient:
         if filter_expr:
             params["$filter"] = filter_expr
 
-        response = self.session.get(BASE_URL, params=params, timeout=self.timeout)
+        # Prefer selecting only fields used by downstream outputs.
+        # If OpenFEMA rejects $select for this resource shape, retry without it.
+        requested_params = dict(params)
+        requested_params["$select"] = ",".join(
+            [
+                "id",
+                "identifier",
+                "sent",
+                "status",
+                "msgType",
+                "scope",
+                "sender",
+                "cogId",
+                "source",
+                "info",
+                "eventCode",
+                "originalMessage",
+            ]
+        )
+
+        response = self.session.get(BASE_URL, params=requested_params, timeout=self.timeout)
+        if response.status_code == 400:
+            response = self.session.get(BASE_URL, params=params, timeout=self.timeout)
         response.raise_for_status()
         payload = response.json()
 
