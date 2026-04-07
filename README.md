@@ -19,15 +19,33 @@ A Python CLI for pulling archived IPAWS alerts from:
 
 ## Setup
 
+### Windows (Command Prompt)
+
+```bat
+py -m venv .venv
+.venv\Scripts\activate
+py -m pip install -r requirements.txt
+```
+
+### Windows (PowerShell)
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+py -m pip install -r requirements.txt
+```
+
+### macOS / Linux (bash/zsh)
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-## Run
+> Why `source` failed for you: `source` is a bash command, but you were running in **Windows Command Prompt**. Use `.venv\Scripts\activate` in Command Prompt instead.
 
-Start the app and follow prompts:
+## Run
 
 ```bash
 python -m app.main
@@ -38,11 +56,6 @@ Prompt input:
 - Start date in `mm/dd/yyyy`
 - End date in `mm/dd/yyyy`
 - COG IDs as comma-separated values, or `*` for all COG IDs
-
-Date behavior:
-
-- Start date is interpreted at midnight (`00:00:00Z`) for that day.
-- End date is inclusive through that full day (implemented as midnight of the next day in the API filter).
 
 ## CLI mode (scripts/automation)
 
@@ -63,18 +76,9 @@ python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-03T00:00:00.00
 python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-03T00:00:00.000Z --cog-id '*'
 ```
 
-Additional flags:
-
-- `--event-code CEM`
-- `--geocode 042081`
-- `--max-pages 2`
-- `--page-size 1000`
-- `--json-output data/ipaws_alerts.json`
-- `--csv-output data/ipaws_alerts.csv`
-
 ## Delivery-system sender fields in CSV
 
-To help identify which organizations transmitted by channel, flattened CSV now includes:
+To help identify which organizations transmitted by channel, flattened CSV includes:
 
 - `deliverySystems` (EAS / WEA / NWEM detected from CAP parameters)
 - `easOrgs` (`EAS-ORG` CAP value)
@@ -84,17 +88,18 @@ To help identify which organizations transmitted by channel, flattened CSV now i
 
 ## Build a standalone Windows `.exe`
 
-Install PyInstaller and build from the launcher script:
+From Command Prompt:
 
-```bash
-pip install pyinstaller
-pyinstaller --onefile --name ipaws-puller ipaws_puller.py
+```bat
+.venv\Scripts\activate
+py -m pip install pyinstaller
+py -m PyInstaller --onefile --name ipaws-puller ipaws_puller.py
 ```
 
 Output executable:
 
 ```text
-dist/ipaws-puller.exe
+dist\ipaws-puller.exe
 ```
 
 You can deploy and run `ipaws-puller.exe` directly (no manual `python -m ...` command needed on the target machine).
@@ -103,5 +108,3 @@ You can deploy and run `ipaws-puller.exe` directly (no manual `python -m ...` co
 
 - `data/ipaws_alerts.json` → raw payload records
 - `data/ipaws_alerts.csv` → one row per alert, with nested fields compacted into pipe-delimited values
-
-The CLI prints the exact filter it applied so you can verify the query.
