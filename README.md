@@ -43,7 +43,6 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-> Why `source` failed for you: `source` is a bash command, but you were running in **Windows Command Prompt**. Use `.venv\Scripts\activate` in Command Prompt instead.
 
 ## Run
 
