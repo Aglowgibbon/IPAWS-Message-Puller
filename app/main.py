@@ -9,6 +9,9 @@ from .client import FEMAIpawsClient, QueryOptions, build_filter
 from .normalize import write_csv, write_json
 
 
+WILDCARD_COG_VALUES = {"*", "all", "all-cogs", "any"}
+
+
 def _split_csv_values(values: Iterable[str]) -> List[str]:
     items: List[str] = []
     for value in values:
@@ -62,20 +65,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start", help="Inclusive start time, e.g. 2026-03-01T00:00:00.000Z")
     parser.add_argument("--end", help="Exclusive end time, e.g. 2026-03-02T00:00:00.000Z")
     parser.add_argument(
+        "--all-cogs",
+        action="store_true",
+        help="Ignore COG filtering and pull alerts from all COG IDs in the selected date range.",
+    )
+    parser.add_argument(
         "--cog-id",
         action="append",
         default=[],
-        help="COG ID filter. Repeat the flag for multiple IDs.",
+        help="COG ID filter. Repeat the flag for multiple IDs. Use '*' for all COG IDs.",
     )
     parser.add_argument(
         "--cog-ids",
         nargs="*",
         default=[],
-        help="One or more COG IDs, comma-separated or space-separated.",
+        help="One or more COG IDs, comma-separated or space-separated. Use '*' for all COG IDs.",
     )
     parser.add_argument(
         "--cog-ids-file",
-        help="Optional text file containing COG IDs, one per line or comma-separated.",
+        help="Optional text file containing COG IDs, one per line or comma-separated. Use '*' for all.",
     )
     parser.add_argument("--event-code", help="Optional event code filter, e.g. CEM, CAE, FLW")
     parser.add_argument("--geocode", help="Optional area geocode filter, e.g. 042081")
@@ -95,6 +103,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def resolve_cog_ids(args: argparse.Namespace) -> List[str]:
+    if getattr(args, "all_cogs", False):
+        return []
+
     cog_ids: List[str] = []
     cog_ids.extend(_split_csv_values(args.cog_id))
     cog_ids.extend(_split_csv_values(args.cog_ids))
@@ -102,7 +113,10 @@ def resolve_cog_ids(args: argparse.Namespace) -> List[str]:
     if args.cog_ids_file:
         cog_ids.extend(_read_cog_ids_file(args.cog_ids_file))
 
-    return _dedupe_preserve_order(cog_ids)
+    deduped = _dedupe_preserve_order(cog_ids)
+    if any(value.lower() in WILDCARD_COG_VALUES for value in deduped):
+        return []
+    return deduped
 
 
 def _prompt_for_date(prompt_text: str) -> str:
@@ -117,11 +131,14 @@ def _prompt_for_date(prompt_text: str) -> str:
 
 def _prompt_for_cog_ids() -> List[str]:
     while True:
-        raw = input("Enter COG IDs (comma-separated, e.g. 200032,200033): ").strip()
+        raw = input("Enter COG IDs (comma-separated) or '*' for all COG IDs: ").strip()
+        if raw.lower() in WILDCARD_COG_VALUES:
+            return []
+
         cog_ids = _dedupe_preserve_order(_split_csv_values([raw]))
         if cog_ids:
             return cog_ids
-        print("  Please enter at least one COG ID.")
+        print("  Please enter at least one COG ID (or '*' for all COG IDs).")
 
 
 def _collect_prompted_values() -> Tuple[str, str, List[str], datetime, datetime]:
@@ -150,6 +167,7 @@ def _resolve_query_inputs(args: argparse.Namespace) -> Tuple[str, str, List[str]
         or cli_cog_ids
         or args.event_code
         or args.geocode
+        or args.all_cogs
     )
     if not has_cli_filters:
         return _collect_prompted_values()
@@ -184,7 +202,7 @@ def main() -> None:
     write_csv(Path(args.csv_output), alerts)
 
     print(f"Downloaded {len(alerts)} alerts")
-    print(f"COG IDs: {', '.join(cog_ids) if cog_ids else 'none'}")
+    print(f"COG IDs: {', '.join(cog_ids) if cog_ids else 'ALL'}")
     if start_dt and end_dt:
         print(f"Date range: {start_dt.strftime('%m/%d/%Y')} through {end_dt.strftime('%m/%d/%Y')} (inclusive)")
     print(f"Applied filter: {build_filter(options) or '[none]'}")

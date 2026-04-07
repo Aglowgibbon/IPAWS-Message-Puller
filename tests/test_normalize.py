@@ -1,4 +1,4 @@
-from app.normalize import _extract_original_wea_messages
+from app.normalize import _extract_original_wea_messages, flatten_alert
 
 
 def test_extract_original_wea_messages_preserves_existing_values_when_later_info_is_empty():
@@ -63,3 +63,34 @@ def test_extract_original_wea_messages_allows_non_empty_replacement_for_same_lan
 
     assert parsed["originalMessage90Spanish"] == "Texto corto actualizado"
     assert parsed["originalMessage360Spanish"] == "Texto largo agregado"
+
+
+def test_flatten_alert_extracts_delivery_system_sender_metadata():
+    alert = {
+        "identifier": "x",
+        "sender": "default@example.org",
+        "info": [
+            {
+                "senderName": "Agency One",
+                "parameter": [
+                    {"valueName": "EAS-ORG", "value": "CIV"},
+                    {"valueName": "BLOCKCHANNEL", "value": "NWEM"},
+                    {"valueName": "BLOCKCHANNEL", "value": "CMAS"},
+                ],
+            },
+            {
+                "senderName": "Agency Two",
+                "parameter": [
+                    {"valueName": "WEAHandling", "value": "Imminent Threat"},
+                ],
+            },
+        ],
+    }
+
+    row = flatten_alert(alert)
+
+    assert row["deliverySystems"] == "EAS|NWEM|WEA"
+    assert row["easOrgs"] == "CIV"
+    assert row["easSenders"] == "Agency One"
+    assert row["weaSenders"] == "Agency One|Agency Two"
+    assert row["nwemSenders"] == "Agency One"
