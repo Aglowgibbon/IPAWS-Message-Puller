@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Set, Tuple
+from typing import Any, Dict, Iterable, List
 from xml.etree import ElementTree
 
 
@@ -154,78 +154,12 @@ def _extract_original_wea_messages(alert: Dict[str, Any]) -> Dict[str, str]:
     return parsed
 
 
-def _extract_delivery_metadata(alert: Dict[str, Any]) -> Tuple[List[str], List[str], List[str], List[str], List[str]]:
-    systems: Set[str] = set()
-    eas_senders: Set[str] = set()
-    wea_senders: Set[str] = set()
-    nwem_senders: Set[str] = set()
-    eas_org_codes: Set[str] = set()
-
-    for info in alert.get("info", []) or []:
-        parameters = info.get("parameter", []) or []
-        has_eas = False
-        has_wea = False
-        has_nwem = False
-
-        for parameter in parameters:
-            if not isinstance(parameter, dict):
-                continue
-
-            name = str(parameter.get("name") or parameter.get("valueName") or "").strip()
-            value = str(parameter.get("value") or "").strip()
-
-            if name == "EAS-ORG":
-                has_eas = True
-                if value:
-                    eas_org_codes.add(value)
-
-            if name in {"WEAHandling", "CMAMtext", "CMAMlongtext"}:
-                has_wea = True
-
-            if name == "BLOCKCHANNEL":
-                if value.upper() == "NWEM":
-                    has_nwem = True
-                if value.upper() == "CMAS":
-                    has_wea = True
-
-        resources = info.get("resource", []) or []
-        for resource in resources:
-            if not isinstance(resource, dict):
-                continue
-            resource_desc = str(resource.get("resourceDesc") or "")
-            if "EAS Broadcast Content" in resource_desc:
-                has_eas = True
-
-        sender_label = str(info.get("senderName") or alert.get("sender") or "").strip()
-        if has_eas:
-            systems.add("EAS")
-            if sender_label:
-                eas_senders.add(sender_label)
-        if has_wea:
-            systems.add("WEA")
-            if sender_label:
-                wea_senders.add(sender_label)
-        if has_nwem:
-            systems.add("NWEM")
-            if sender_label:
-                nwem_senders.add(sender_label)
-
-    return (
-        sorted(systems),
-        sorted(eas_senders),
-        sorted(wea_senders),
-        sorted(nwem_senders),
-        sorted(eas_org_codes),
-    )
-
-
 def flatten_alert(alert: Dict[str, Any]) -> Dict[str, Any]:
     info_languages = _extract_info_values(alert, "language")
     info_categories = _extract_info_values(alert, "category")
     info_events = _extract_info_values(alert, "event")
     info_expires = _extract_info_values(alert, "expires")
     original_wea_messages = _extract_original_wea_messages(alert)
-    delivery_systems, eas_senders, wea_senders, nwem_senders, eas_org_codes = _extract_delivery_metadata(alert)
 
     return {
         "id": alert.get("id"),
@@ -241,11 +175,6 @@ def flatten_alert(alert: Dict[str, Any]) -> Dict[str, Any]:
         "info.category": "|".join(info_categories),
         "info.event": "|".join(info_events),
         "info.expires": "|".join(info_expires),
-        "deliverySystems": "|".join(delivery_systems),
-        "easOrgs": "|".join(eas_org_codes),
-        "easSenders": "|".join(eas_senders),
-        "weaSenders": "|".join(wea_senders),
-        "nwemSenders": "|".join(nwem_senders),
         "eventCodes": "|".join(_extract_event_codes(alert)),
         "events": "|".join(_extract_events(alert)),
         "headlines": "|".join(_extract_headlines(alert)),
