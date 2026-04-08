@@ -17,9 +17,21 @@ A Python CLI for pulling archived IPAWS alerts from:
   - raw JSON
   - flattened CSV for analysis
 
-## Setup
+## End users (no Python required)
 
-### Windows (Command Prompt)
+Download one of the Windows artifacts from the GitHub **Releases** page:
+
+- `ipaws-puller-setup.exe` (recommended installer)
+- `ipaws-puller.exe` (portable executable)
+- `ipaws-puller-bundle.zip` (portable executable + quick-start guide)
+
+The app currently supports Windows 10/11 (64-bit). It makes outbound HTTPS requests to FEMA (`www.fema.gov`), so firewall-restricted environments may require allow-listing that domain.
+
+## Developers (Python workflow)
+
+### Setup
+
+#### Windows (Command Prompt)
 
 ```bat
 py -m venv .venv
@@ -27,7 +39,7 @@ py -m venv .venv
 py -m pip install -r requirements.txt
 ```
 
-### Windows (PowerShell)
+#### Windows (PowerShell)
 
 ```powershell
 py -m venv .venv
@@ -35,7 +47,7 @@ py -m venv .venv
 py -m pip install -r requirements.txt
 ```
 
-### macOS / Linux (bash/zsh)
+#### macOS / Linux (bash/zsh)
 
 ```bash
 python -m venv .venv
@@ -43,8 +55,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-
-## Run
+### Run
 
 ```bash
 python -m app.main
@@ -56,7 +67,7 @@ Prompt input:
 - End date in `mm/dd/yyyy`
 - COG IDs as comma-separated values, or `*` for all COG IDs
 
-## CLI mode (scripts/automation)
+### CLI mode (scripts/automation)
 
 ```bash
 python -m app.main \
@@ -75,17 +86,7 @@ python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-03T00:00:00.00
 python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-03T00:00:00.000Z --cog-id '*'
 ```
 
-## Delivery-system sender fields in CSV
-
-To help identify which organizations transmitted by channel, flattened CSV includes:
-
-- `deliverySystems` (EAS / WEA / NWEM detected from CAP parameters)
-- `easOrgs` (`EAS-ORG` CAP value)
-- `easSenders` (senderName/sender for EAS messages)
-- `weaSenders` (senderName/sender for WEA messages)
-- `nwemSenders` (senderName/sender for NWEM messages)
-
-## Build a standalone Windows `.exe`
+## Developers: local PyInstaller build
 
 From Command Prompt:
 
@@ -101,7 +102,15 @@ Output executable:
 dist\ipaws-puller.exe
 ```
 
-You can deploy and run `ipaws-puller.exe` directly (no manual `python -m ...` command needed on the target machine).
+## Delivery-system sender fields in CSV
+
+To help identify which organizations transmitted by channel, flattened CSV includes:
+
+- `deliverySystems` (EAS / WEA / NWEM detected from CAP parameters)
+- `easOrgs` (`EAS-ORG` CAP value)
+- `easSenders` (senderName/sender for EAS messages)
+- `weaSenders` (senderName/sender for WEA messages)
+- `nwemSenders` (senderName/sender for NWEM messages)
 
 ## Output
 
