@@ -65,7 +65,7 @@ def test_extract_original_wea_messages_allows_non_empty_replacement_for_same_lan
     assert parsed["originalMessage360Spanish"] == "Texto largo agregado"
 
 
-def test_flatten_alert_extracts_delivery_system_sender_metadata():
+def test_flatten_alert_does_not_emit_delivery_system_sender_metadata():
     alert = {
         "identifier": "x",
         "sender": "default@example.org",
@@ -89,8 +89,8 @@ def test_flatten_alert_extracts_delivery_system_sender_metadata():
 
     row = flatten_alert(alert)
 
-    assert row["deliverySystems"] == "EAS|NWEM|WEA"
-    assert row["easOrgs"] == "CIV"
-    assert row["easSenders"] == "Agency One"
-    assert row["weaSenders"] == "Agency One|Agency Two"
-    assert row["nwemSenders"] == "Agency One"
+    assert "deliverySystems" not in row
+    assert "easOrgs" not in row
+    assert "easSenders" not in row
+    assert "weaSenders" not in row
+    assert "nwemSenders" not in row
