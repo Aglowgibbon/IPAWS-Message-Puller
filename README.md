@@ -75,16 +75,6 @@ python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-03T00:00:00.00
 python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-03T00:00:00.000Z --cog-id '*'
 ```
 
-## Delivery-system sender fields in CSV
-
-To help identify which organizations transmitted by channel, flattened CSV includes:
-
-- `deliverySystems` (EAS / WEA / NWEM detected from CAP parameters)
-- `easOrgs` (`EAS-ORG` CAP value)
-- `easSenders` (senderName/sender for EAS messages)
-- `weaSenders` (senderName/sender for WEA messages)
-- `nwemSenders` (senderName/sender for NWEM messages)
-
 ## Build a standalone Windows `.exe`
 
 From Command Prompt:
