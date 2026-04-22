@@ -21,9 +21,7 @@ A Python CLI for pulling archived IPAWS alerts from:
 
 Download one of the Windows artifacts from the GitHub **Releases** page:
 
-- `ipaws-puller-setup.exe` (recommended installer)
 - `ipaws-puller.exe` (portable executable)
-- `ipaws-puller-bundle.zip` (portable executable + quick-start guide)
 
 The app currently supports Windows 10/11 (64-bit). It makes outbound HTTPS requests to FEMA (`www.fema.gov`), so firewall-restricted environments may require allow-listing that domain.
 
@@ -101,16 +99,6 @@ Output executable:
 ```text
 dist\ipaws-puller.exe
 ```
-
-## Delivery-system sender fields in CSV
-
-To help identify which organizations transmitted by channel, flattened CSV includes:
-
-- `deliverySystems` (EAS / WEA / NWEM detected from CAP parameters)
-- `easOrgs` (`EAS-ORG` CAP value)
-- `easSenders` (senderName/sender for EAS messages)
-- `weaSenders` (senderName/sender for WEA messages)
-- `nwemSenders` (senderName/sender for NWEM messages)
 
 ## Output
 
