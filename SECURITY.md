@@ -13,7 +13,7 @@ Security updates are currently provided for the latest `1.0.x` release line only
 
 Please do not report security vulnerabilities through public GitHub issues, pull requests, or discussions.
 
-If GitHub private vulnerability reporting is available for this repository, use that channel first. If it is not available, contact the maintainer privately through GitHub and clearly label the message as a security report.
+Use Private Vulnerability Reporting first to report an issue. If it is not available, contact the maintainer privately through GitHub and clearly label the message as a security report.
 
 When you report an issue, please include:
 
