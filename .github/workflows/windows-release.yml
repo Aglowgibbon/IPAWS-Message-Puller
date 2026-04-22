@@ -12,6 +12,9 @@ permissions:
 jobs:
   build-release:
     runs-on: windows-latest
+    env:
+      CODESIGN_PFX_BASE64: ${{ secrets.WINDOWS_CODESIGN_PFX_BASE64 }}
+      CODESIGN_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_PASSWORD }}
 
     steps:
       - name: Check out repository
@@ -33,11 +36,8 @@ jobs:
           pyinstaller --onefile --name ipaws-puller ipaws_puller.py
 
       - name: Optionally sign portable executable
-        if: ${{ secrets.WINDOWS_CODESIGN_PFX_BASE64 != '' && secrets.WINDOWS_CODESIGN_PASSWORD != '' }}
+        if: ${{ env.CODESIGN_PFX_BASE64 != '' && env.CODESIGN_PASSWORD != '' }}
         shell: pwsh
-        env:
-          CODESIGN_PFX_BASE64: ${{ secrets.WINDOWS_CODESIGN_PFX_BASE64 }}
-          CODESIGN_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_PASSWORD }}
         run: |
           $pfxPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
           [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:CODESIGN_PFX_BASE64))
@@ -62,11 +62,8 @@ jobs:
           & $iscc "/DMyAppVersion=$version" installer\ipaws-puller.iss
 
       - name: Optionally sign installer executable
-        if: ${{ secrets.WINDOWS_CODESIGN_PFX_BASE64 != '' && secrets.WINDOWS_CODESIGN_PASSWORD != '' }}
+        if: ${{ env.CODESIGN_PFX_BASE64 != '' && env.CODESIGN_PASSWORD != '' }}
         shell: pwsh
-        env:
-          CODESIGN_PFX_BASE64: ${{ secrets.WINDOWS_CODESIGN_PFX_BASE64 }}
-          CODESIGN_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_PASSWORD }}
         run: |
           $pfxPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
           [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:CODESIGN_PFX_BASE64))
