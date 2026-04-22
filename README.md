@@ -67,10 +67,16 @@ Prompt input:
 
 ### CLI mode (scripts/automation)
 
+When you provide any CLI filter (`--start`, `--end`, `--all-cogs`, `--cog-id`, `--cog-ids`, `--cog-ids-file`, `--event-code`, or `--geocode`), interactive prompting is disabled.
+In CLI mode, both `--start` and `--end` are required.
+
+`--start` is inclusive.
+`--end` is exclusive, so use the next midnight if you want to include a full calendar day.
+
 ```bash
 python -m app.main \
   --start 2026-03-01T00:00:00.000Z \
-  --end 2026-03-08T00:00:00.000Z \
+  --end 2026-03-09T00:00:00.000Z \
   --all-cogs
 ```
 
@@ -78,10 +84,10 @@ Examples:
 
 ```bash
 # specific COG IDs
-python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-03T00:00:00.000Z --cog-ids 200032 200033
+python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-04T00:00:00.000Z --cog-ids 200032 200033
 
 # wildcard COG IDs (all)
-python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-03T00:00:00.000Z --cog-id '*'
+python -m app.main --start 2026-04-02T00:00:00.000Z --end 2026-04-04T00:00:00.000Z --cog-id '*'
 ```
 
 ## Developers: local PyInstaller build
@@ -102,5 +108,5 @@ dist\ipaws-puller.exe
 
 ## Output
 
-- `data/ipaws_alerts.json` → raw payload records
-- `data/ipaws_alerts.csv` → one row per alert, with nested fields compacted into pipe-delimited values
+- `data/ipaws_alerts.json` -> raw payload records
+- `data/ipaws_alerts.csv` -> one row per alert, with nested fields compacted into pipe-delimited values
